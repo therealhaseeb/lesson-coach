@@ -31,7 +31,7 @@ def _context(lessons: list[Lesson]) -> str:
 
 def answer(query: str, lessons: list[Lesson]) -> tuple[str, list[Lesson], str]:
     load_dotenv()
-    matches = retrieve(query, lessons)
+    matches = retrieve(query, lessons, limit=1)
     base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
     model = os.getenv("OLLAMA_MODEL", "llama3.2:3b")
     try:
@@ -40,7 +40,7 @@ def answer(query: str, lessons: list[Lesson]) -> tuple[str, list[Lesson], str]:
         response = client.chat.completions.create(
             model=model,
             temperature=0.2,
-            max_tokens=600,
+            max_tokens=int(os.getenv("OLLAMA_MAX_TOKENS", "1200")),
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": f"Teacher request: {query}\n\nLesson context:\n{_context(matches) if matches else '[No matching lesson context]'}"},
