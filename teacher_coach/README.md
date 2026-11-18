@@ -33,6 +33,8 @@ python -m teacher_coach.app
 
 If Ollama is not running, the app automatically returns the existing hard-coded fallback response. The local model receives only the teacher request and selected lesson context.
 
+The default response budget is 1,200 tokens. Increase `OLLAMA_MAX_TOKENS` in `.env` if a local model still truncates an answer.
+
 ## Retrieval workflow
 
 This prototype does not use a vector database and does not perform embedding-based semantic search. It loads the small local `content/lessons.json` library, tokenizes the teacher request, scores lessons by overlapping words, and applies explicit bridges for phrases such as `x + 3 = 8`, `fractions`, and `rectangle`. The top matches are placed in the local model prompt. A production version could replace this function with embeddings and a vector database later.
