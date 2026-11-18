@@ -17,16 +17,17 @@ Ask a question such as:
 The app uses a local open-weight model through Ollama. It does not use a hosted LLM API or require an API key.
 
 ```powershell
-ollama run llama3.2:3b
+pip install -r requirements.txt
+ollama run qwen3:1.7b
 python -m teacher_coach.app
 ```
 
 The app also supports local open-weight models served through an OpenAI-compatible endpoint. For example, with Ollama:
 
 ```powershell
-ollama run llama3.2:3b
+ollama run qwen3:1.7b
 $env:OLLAMA_BASE_URL = "http://localhost:11434/v1"
-$env:OLLAMA_MODEL = "llama3.2:3b"
+$env:OLLAMA_MODEL = "qwen3:1.7b"
 python -m teacher_coach.app
 ```
 
