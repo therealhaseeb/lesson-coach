@@ -18,6 +18,7 @@ The app uses a local open-weight model through Ollama. It does not use a hosted 
 
 ```powershell
 pip install -r requirements.txt
+Copy-Item .env.example .env
 ollama run qwen3:1.7b
 python -m teacher_coach.app
 ```
@@ -26,8 +27,7 @@ The app also supports local open-weight models served through an OpenAI-compatib
 
 ```powershell
 ollama run qwen3:1.7b
-$env:OLLAMA_BASE_URL = "http://localhost:11434/v1"
-$env:OLLAMA_MODEL = "qwen3:1.7b"
+# Edit .env if you want to change the model or Ollama URL.
 python -m teacher_coach.app
 ```
 
