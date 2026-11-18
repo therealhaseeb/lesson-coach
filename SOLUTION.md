@@ -130,7 +130,7 @@ The retrieval function has a small, replaceable interface. A production implemen
 
 #### `coach.py`
 
-Coordinates retrieval and generation. If `OPENAI_API_KEY` is absent, it returns the deterministic fallback. If a key is present, it sends the teacher request and selected lesson context to an OpenAI-compatible chat model.
+Coordinates retrieval and generation. It sends the teacher request and selected lesson context only to a local Ollama open-weight model. If Ollama is unavailable, it returns the deterministic fallback.
 
 The model prompt requires the coach to:
 
@@ -168,9 +168,9 @@ JSON is appropriate for the first version because the lesson library is small, v
 
 Token matching is intentionally simple. It has transparent behavior, no infrastructure cost, and no embedding-model dependency. It is not sufficient for a large curriculum, but it is a good prototype boundary.
 
-### Optional OpenAI-compatible model integration
+### Local open-weight model integration
 
-The model integration is optional so that the prototype can be evaluated without credentials. The model is used for language generation, not as the source of truth for the curriculum. The same interface can connect to a hosted model or to a local open-weight model served through an OpenAI-compatible endpoint, such as Ollama or LM Studio.
+The only model path is a local open-weight model served by Ollama through its local OpenAI-compatible endpoint. There is no hosted LLM API path and no API key is required. The model is used for language generation, not as the source of truth for the curriculum.
 
 ### CLI instead of frontend
 
@@ -211,7 +211,7 @@ Trade-off: responses are less flexible and mostly limited to the curated materia
 
 ### Model mode
 
-When `OPENAI_API_KEY` is configured:
+When Ollama is running locally:
 
 ```text
 Question -> local retrieval -> grounded prompt -> model -> structured answer
@@ -223,21 +223,24 @@ Advantages:
 - better adaptation to teacher phrasing;
 - ability to combine the retrieved lesson material into a tailored explanation.
 
-Trade-off: model calls introduce cost, latency, provider dependency, and residual hallucination risk.
+Trade-off: local model calls introduce hardware requirements, latency, model-quality variation, and residual hallucination risk.
 
 ### Local open-weight mode
 
-The application can use a local model by setting `OPENAI_BASE_URL` to a local OpenAI-compatible endpoint. For example, with Ollama:
+The application uses Ollama's local OpenAI-compatible endpoint. For example:
 
 ```powershell
 ollama run llama3.2:3b
-$env:OPENAI_BASE_URL = "http://localhost:11434/v1"
-$env:OPENAI_MODEL = "llama3.2:3b"
-$env:OPENAI_API_KEY = "ollama"
+$env:OLLAMA_BASE_URL = "http://localhost:11434/v1"
+$env:OLLAMA_MODEL = "llama3.2:3b"
 python -m teacher_coach.app
 ```
 
-This keeps the request and lesson context on the local machine, removes per-request API cost, and makes experimentation with open-weight models easy. The trade-offs are local RAM/CPU/GPU requirements, potentially slower or weaker responses, and the need to install and operate the model runtime.
+This keeps the request and lesson context on the local machine, removes per-request API cost, and makes experimentation with open-weight models easy. The trade-offs are local RAM/CPU/GPU requirements, potentially slower or weaker responses, and the need to install and operate Ollama.
+
+## Retrieval and semantic-search decision
+
+The prototype does not use a vector database. It uses lexical retrieval: tokenizing the request, counting overlaps with lesson titles, keywords, and refreshers, then applying explicit phrase bridges. This is not embedding-based semantic search. It is transparent and adequate for three lessons, but it will miss synonyms and longer conceptual relationships. A production upgrade would add embeddings and a vector store while keeping the same retrieval interface.
 
 ### Failure behavior
 
