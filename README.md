@@ -1,10 +1,8 @@
 # Lesson Coach
 
-A grounded AI math lesson-preparation coach for teachers.
+Lesson Coach is a small, grounded prototype for math teachers who want to refresh their own understanding and prepare a lesson without being tested, scored, or judged.
 
-Lesson Coach helps a teacher refresh the mathematics behind a topic and prepare a lesson without tests, scores, judgment, or certificates. The prototype deliberately focuses on a small, explainable vertical slice rather than a generic chatbot.
-
-## Quick start
+## Run it
 
 Requires Python 3.10+.
 
@@ -12,21 +10,30 @@ Requires Python 3.10+.
 python -m teacher_coach.app
 ```
 
-Try:
+Ask a question such as:
 
-```
-Help me prepare a lesson on equivalent fractions for grade 5
-```
+> Help me prepare a lesson on equivalent fractions for grade 5.
 
-The app runs in deterministic demo mode without credentials. For model-backed generation, install the optional dependency and configure an OpenAI-compatible API key:
+The app works in deterministic demo mode by default. To use an OpenAI-compatible model, set `OPENAI_API_KEY` and optionally `OPENAI_MODEL` (default: `gpt-4o-mini`):
 
 ```powershell
-pip install -e ".[model]"
 $env:OPENAI_API_KEY = "..."
 python -m teacher_coach.app
 ```
 
-Run the regression checks:
+The app also supports local open-weight models served through an OpenAI-compatible endpoint. For example, with Ollama:
+
+```powershell
+ollama run llama3.2:3b
+$env:OPENAI_BASE_URL = "http://localhost:11434/v1"
+$env:OPENAI_MODEL = "llama3.2:3b"
+$env:OPENAI_API_KEY = "ollama"
+python -m teacher_coach.app
+```
+
+The local model receives only the teacher request and the retrieved lesson context. No cloud model call is made when `OPENAI_BASE_URL` points to a local server.
+
+Run the checks:
 
 ```powershell
 python -m teacher_coach.evaluate
@@ -34,104 +41,41 @@ python -m teacher_coach.evaluate
 
 ## Product decision
 
-The prototype is a lesson-preparation coach, not open-ended chat. A teacher enters a topic or lesson goal and receives:
-
-- a mathematics refresher;
-- a teachable explanation;
-- likely misconceptions;
-- classroom prompts;
-- a practical next step.
-
-The response is grounded in a small local lesson library. When the topic is not covered, the demo says so instead of inventing content.
+The prototype focuses on lesson preparation, not general chat. A teacher enters a topic or goal and receives a short mathematics refresher, a teachable explanation, likely misconceptions, classroom prompts, and a next step. There are no tests, scores, certificates, or teacher judgments.
 
 ## Architecture
 
-```text
-Teacher request
-      |
-      v
-Lightweight topic retrieval
-      |
-      v
-Grounded lesson context
-      |
-      v
-LLM response or deterministic fallback
-      |
-      v
-Structured teacher-facing answer
-```
+1. `content/lessons.json` contains a small, inspectable lesson library.
+2. `retrieval.py` uses lightweight token matching to select relevant lesson material.
+3. `coach.py` builds a grounded prompt and calls the model when configured.
+4. Without an API key, `fallback.py` provides a transparent demo response from the same lesson material.
+5. `evaluate.py` runs a small regression set for relevance, grounding, usefulness, and safe handling of unsupported topics.
 
-- `teacher_coach/content/lessons.json` contains inspectable lesson material.
-- `retrieval.py` selects relevant material with lightweight token matching.
-- `coach.py` builds the grounded prompt and optionally calls a model.
-- `fallback.py` keeps the app runnable and predictable without an API key.
-- `evaluate.py` checks supported topics, required sections, and unsupported-topic behavior.
+The retrieval interface is intentionally replaceable: a production version could swap token matching for embeddings and a managed vector store without changing the coach contract.
 
-The retrieval boundary is replaceable: production could use embeddings and a managed vector store without changing the coach interface.
+## Quality approach
 
-## Evaluation
-
-The included checks cover:
-
-1. equivalent fractions;
-2. a symbolic one-step equation query;
-3. rectangle area;
-4. an unsupported calculus query.
-
-Each supported response is checked for a matching lesson and required answer sections. The unsupported query is checked for a clear limitation. This is a prototype regression suite, not a claim of formal educational validation.
+The evaluation set includes supported questions, a misconception-focused question, and an unsupported topic. Each result is checked for a relevant lesson, required answer sections, and an explicit limitation when the library does not cover the request. This is a prototype evaluation, not a claim of educational validation.
 
 ## Cost and scaling
 
-Illustrative planning assumption: 20 lesson-preparation requests per active teacher per month, with 1,200 input tokens and 700 output tokens per request.
+Illustrative assumption: 20 lesson-preparation requests per active teacher per month, 1,200 input tokens and 700 output tokens per request, using a low-cost model. The calculation is:
 
 ```text
-monthly cost per teacher
-= 20 × (1,200 input tokens + 700 output tokens) × model price / 1,000,000
+20 × (1,200 input tokens + 700 output tokens) × model price / 1,000,000
 ```
 
-The exact result depends on the selected provider and current pricing. Costs can be reduced by:
-
-- keeping retrieved context short;
-- caching common topics;
-- using a small model for routing;
-- reserving a stronger model for difficult explanations;
-- pre-generating high-frequency lesson material;
-- avoiding unnecessary conversation history.
+The exact number depends on the chosen provider and current pricing. Costs can be reduced by keeping lesson context short, caching common topics, using a small model for routing, and pre-generating explanations for frequently requested lessons.
 
 ## Data and compliance
 
-The prototype sends the teacher's typed request and selected lesson context to the configured model provider. It does not request or store student names, student records, or other personal data, and the demo keeps no conversation history.
-
-For production, add retention limits, deletion controls, access controls, provider data-processing review, regional hosting decisions, and clear guidance not to enter identifiable student information.
+The prototype sends the teacher's typed request and selected lesson context to the configured model provider. It does not ask for or store student names, student records, or other personal data. The demo keeps no conversation history. In production, add retention limits, deletion controls, access controls, provider data-processing review, and clear guidance not to enter identifiable student information.
 
 ## Scope and trade-offs
 
-Skipped deliberately:
+Skipped deliberately: accounts, polished frontend, full curriculum coverage, multilingual support, vector infrastructure, analytics, and persistent personalization. These would be appropriate after validating that teachers find the grounded lesson-preparation flow useful.
 
-- accounts and authentication;
-- a polished frontend;
-- full curriculum coverage;
-- multilingual support;
-- vector database infrastructure;
-- analytics;
-- persistent personalization.
+## Two-hour implementation log
 
-These are reasonable next steps after validating that teachers find the grounded lesson-preparation flow useful. The prototype prioritizes a working, explainable vertical slice over feature count.
+The intended assignment workflow is represented by the commit history: establish the prototype, add retrieval, add generation/fallback, then add evaluation and documentation. The implementation prioritizes a working, explainable vertical slice over feature count.
 
-## Repository structure
-
-```text
-teacher_coach/
-  app.py                 # interactive CLI
-  coach.py               # grounded generation
-  evaluate.py            # regression checks
-  fallback.py            # deterministic demo responses
-  retrieval.py           # lesson loading and retrieval
-  content/lessons.json   # curated lesson library
-pyproject.toml
-```
-
-## Assignment delivery notes
-
-The project was designed for a two-hour technical assignment: choose a narrow teacher need, build a working prototype, explain trade-offs, evaluate answer quality, estimate cost, and document data handling.
