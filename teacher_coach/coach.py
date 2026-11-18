@@ -19,11 +19,15 @@ def _context(lessons: list[Lesson]) -> str:
 def answer(query: str, lessons: list[Lesson]) -> tuple[str, list[Lesson], str]:
     matches = retrieve(query, lessons)
     api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
+    base_url = os.getenv("OPENAI_BASE_URL")
+    if not api_key and not base_url:
         return render_demo_answer(query, matches), matches, "demo"
     try:
         from openai import OpenAI
-        client = OpenAI(api_key=api_key)
+        client_args = {"api_key": api_key or "local-model"}
+        if base_url:
+            client_args["base_url"] = base_url
+        client = OpenAI(**client_args)
         response = client.chat.completions.create(
             model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
             temperature=0.2,
@@ -36,3 +40,4 @@ def answer(query: str, lessons: list[Lesson]) -> tuple[str, list[Lesson], str]:
         return response.choices[0].message.content, matches, "model"
     except Exception as exc:
         return render_demo_answer(query, matches) + f"\n\n_Model unavailable; used demo mode ({type(exc).__name__})._", matches, "demo-fallback"
+
