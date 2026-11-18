@@ -231,13 +231,14 @@ The application uses Ollama's local OpenAI-compatible endpoint. For example:
 
 ```powershell
 pip install -r requirements.txt
+Copy-Item .env.example .env
 ollama run qwen3:1.7b
-$env:OLLAMA_BASE_URL = "http://localhost:11434/v1"
-$env:OLLAMA_MODEL = "qwen3:1.7b"
 python -m teacher_coach.app
 ```
 
 This keeps the request and lesson context on the local machine, removes per-request API cost, and makes experimentation with open-weight models easy. The trade-offs are local RAM/CPU/GPU requirements, potentially slower or weaker responses, and the need to install and operate Ollama.
+
+Configuration is loaded from a local `.env` file. The repository includes `.env.example`; the actual `.env` is ignored by Git so local configuration is not committed.
 
 ## Retrieval and semantic-search decision
 
