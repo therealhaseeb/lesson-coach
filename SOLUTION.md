@@ -230,9 +230,10 @@ Trade-off: local model calls introduce hardware requirements, latency, model-qua
 The application uses Ollama's local OpenAI-compatible endpoint. For example:
 
 ```powershell
-ollama run llama3.2:3b
+pip install -r requirements.txt
+ollama run qwen3:1.7b
 $env:OLLAMA_BASE_URL = "http://localhost:11434/v1"
-$env:OLLAMA_MODEL = "llama3.2:3b"
+$env:OLLAMA_MODEL = "qwen3:1.7b"
 python -m teacher_coach.app
 ```
 
