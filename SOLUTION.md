@@ -170,7 +170,7 @@ Token matching is intentionally simple. It has transparent behavior, no infrastr
 
 ### Optional OpenAI-compatible model integration
 
-The model integration is optional so that the prototype can be evaluated without credentials. The model is used for language generation, not as the source of truth for the curriculum.
+The model integration is optional so that the prototype can be evaluated without credentials. The model is used for language generation, not as the source of truth for the curriculum. The same interface can connect to a hosted model or to a local open-weight model served through an OpenAI-compatible endpoint, such as Ollama or LM Studio.
 
 ### CLI instead of frontend
 
@@ -224,6 +224,20 @@ Advantages:
 - ability to combine the retrieved lesson material into a tailored explanation.
 
 Trade-off: model calls introduce cost, latency, provider dependency, and residual hallucination risk.
+
+### Local open-weight mode
+
+The application can use a local model by setting `OPENAI_BASE_URL` to a local OpenAI-compatible endpoint. For example, with Ollama:
+
+```powershell
+ollama run llama3.2:3b
+$env:OPENAI_BASE_URL = "http://localhost:11434/v1"
+$env:OPENAI_MODEL = "llama3.2:3b"
+$env:OPENAI_API_KEY = "ollama"
+python -m teacher_coach.app
+```
+
+This keeps the request and lesson context on the local machine, removes per-request API cost, and makes experimentation with open-weight models easy. The trade-offs are local RAM/CPU/GPU requirements, potentially slower or weaker responses, and the need to install and operate the model runtime.
 
 ### Failure behavior
 
