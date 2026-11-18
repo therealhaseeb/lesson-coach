@@ -2,6 +2,19 @@ from __future__ import annotations
 
 import os
 
+try:
+    from dotenv import load_dotenv
+except ModuleNotFoundError:  # Keep the demo runnable before dependencies are installed.
+    def load_dotenv() -> None:
+        env_path = ".env"
+        if not os.path.exists(env_path):
+            return
+        for line in open(env_path, encoding="utf-8"):
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                key, value = line.split("=", 1)
+                os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
 from .fallback import render_demo_answer
 from .retrieval import Lesson, retrieve
 
@@ -17,6 +30,7 @@ def _context(lessons: list[Lesson]) -> str:
 
 
 def answer(query: str, lessons: list[Lesson]) -> tuple[str, list[Lesson], str]:
+    load_dotenv()
     matches = retrieve(query, lessons)
     base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
     model = os.getenv("OLLAMA_MODEL", "llama3.2:3b")
