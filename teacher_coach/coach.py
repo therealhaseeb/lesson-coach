@@ -18,18 +18,13 @@ def _context(lessons: list[Lesson]) -> str:
 
 def answer(query: str, lessons: list[Lesson]) -> tuple[str, list[Lesson], str]:
     matches = retrieve(query, lessons)
-    api_key = os.getenv("OPENAI_API_KEY")
-    base_url = os.getenv("OPENAI_BASE_URL")
-    if not api_key and not base_url:
-        return render_demo_answer(query, matches), matches, "demo"
+    base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
+    model = os.getenv("OLLAMA_MODEL", "llama3.2:3b")
     try:
         from openai import OpenAI
-        client_args = {"api_key": api_key or "local-model"}
-        if base_url:
-            client_args["base_url"] = base_url
-        client = OpenAI(**client_args)
+        client = OpenAI(api_key="ollama", base_url=base_url)
         response = client.chat.completions.create(
-            model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+            model=model,
             temperature=0.2,
             max_tokens=600,
             messages=[
@@ -39,5 +34,5 @@ def answer(query: str, lessons: list[Lesson]) -> tuple[str, list[Lesson], str]:
         )
         return response.choices[0].message.content, matches, "model"
     except Exception as exc:
-        return render_demo_answer(query, matches) + f"\n\n_Model unavailable; used demo mode ({type(exc).__name__})._", matches, "demo-fallback"
+        return render_demo_answer(query, matches) + f"\n\n_Local Ollama unavailable; used demo mode ({type(exc).__name__})._", matches, "demo-fallback"
 
